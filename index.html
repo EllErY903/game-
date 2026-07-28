@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Čelovka – hádací hra na čelo</title>
+<meta name="description" content="Hádací hra na čelo – nakloň telefon nahoru pro správně, dolů pro špatně.">
+<meta name="theme-color" content="#0b0b12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Čelovka">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #0b0b12;
+    --bg-alt: #15151f;
+    --card: #1c1c29;
+    --text: #f5f5fa;
+    --muted: #9797ab;
+    --accent: #6c5ce7;
+    --accent-2: #a29bfe;
+    --green: #14a44d;
+    --green-bright: #1fd463;
+    --red: #d92b3d;
+    --red-bright: #ff4d5e;
+    --yellow: #ffb020;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overscroll-behavior: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    overflow: hidden;
+  }
+
+  button, select {
+    font-family: inherit;
+  }
+
+  #app {
+    position: fixed;
+    inset: 0;
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+  }
+
+  .hidden { display: none !important; }
+
+  /* ---------- Orientation lock ---------- */
+  #orientation-lock {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 16px;
+    padding: 24px;
+  }
+  #orientation-lock.visible { display: flex; }
+  #orientation-lock .rotate-icon {
+    font-size: 64px;
+    animation: rotateHint 1.6s ease-in-out infinite;
+  }
+  @keyframes rotateHint {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+  }
+  #orientation-lock p { font-size: 1.3rem; margin: 0; color: var(--text); }
+
+  /* ---------- Start screen ---------- */
+  #screen-start { gap: 10px; overflow-y: auto; touch-action: pan-y; }
+  .logo {
+    font-size: clamp(1.6rem, 5vw, 2.4rem);
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin: 2px 0 6px;
+    color: var(--accent-2);
+  }
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 560px;
+  }
+  .field-row label {
+    width: 130px;
+    flex-shrink: 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+  select {
+    flex: 1;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid #2c2c3d;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 1rem;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .btn {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+    color: var(--text);
+    background: var(--card);
+    transition: transform 0.1s ease, opacity 0.15s ease;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #5849c2); }
+  .btn-primary:disabled { opacity: 0.4; }
+  .btn-secondary { background: var(--card); border: 1px solid #33334a; }
+  .btn-row { display: flex; gap: 10px; width: 100%; max-width: 560px; }
+  .btn-row .btn { flex: 1; }
+  #sensor-status {
+    font-size: 0.85rem;
+    color: var(--muted);
+    max-width: 560px;
+    text-align: center;
+    min-height: 1.2em;
+  }
+  #sensor-status.ok { color: var(--green-bright); }
+  #sensor-status.warn { color: var(--yellow); }
+  #sensor-status.err { color: var(--red-bright); }
+  .hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    max-width: 560px;
+    margin-top: 4px;
+  }
+
+  /* ---------- Countdown ---------- */
+  #screen-countdown .countdown-number {
+    font-size: clamp(6rem, 30vw, 14rem);
+    font-weight: 800;
+    color: var(--accent-2);
+  }
+  #screen-countdown .countdown-label {
+    font-size: 1.1rem;
+    color: var(--muted);
+    margin-top: -10px;
+  }
+
+  /* ---------- Game screen ---------- */
+  #screen-game { padding: 8px 16px; }
+  .game-top {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  #game-timer { font-variant-numeric: tabular-nums; }
+  #game-timer.low-time { color: var(--red-bright); animation: pulse 1s infinite; }
+  #game-score { color: var(--accent-2); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  #game-word-wrap {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  #game-word {
+    font-size: clamp(2.6rem, 11vw, 6.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    word-break: break-word;
+    padding: 0 8px;
+  }
+  .touch-zones {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    z-index: 5;
+  }
+  .touch-zones .zone {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 14px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    opacity: 0.35;
+  }
+  .zone.wrong { color: var(--red-bright); }
+  .zone.correct { color: var(--green-bright); }
+
+  /* ---------- Feedback overlay ---------- */
+  #screen-feedback {
+    z-index: 50;
+    font-size: clamp(2.5rem, 10vw, 5rem);
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+  #screen-feedback.correct { background: var(--green); }
+  #screen-feedback.wrong { background: var(--red); }
+
+  /* ---------- End screen ---------- */
+  #screen-end { gap: 8px; }
+  #end-score {
+    font-size: clamp(1.8rem, 6vw, 2.6rem);
+    font-weight: 800;
+    color: var(--accent-2);
+  }
+  #end-list-wrap {
+    width: 100%;
+    max-width: 640px;
+    flex: 1;
+    overflow-y: auto;
+    touch-action: pan-y;
+    background: var(--bg-alt);
+    border-radius: 12px;
+    padding: 6px 10px;
+    margin: 8px 0;
+  }
+  #end-list { list-style: none; margin: 0; padding: 0; }
+  #end-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 4px;
+    border-bottom: 1px solid #26263a;
+    font-size: 0.95rem;
+  }
+  #end-list li:last-child { border-bottom: none; }
+  #end-list .mark { font-weight: 800; }
+  #end-list li.ok .mark { color: var(--green-bright); }
+  #end-list li.bad .mark { color: var(--red-bright); }
+
+  /* ---------- Debug overlay ---------- */
+  #debug-overlay {
+    position: fixed;
+    top: calc(var(--safe-top) + 6px);
+    left: calc(var(--safe-left) + 6px);
+    z-index: 99999;
+    background: rgba(0,0,0,0.75);
+    color: #7CFC9A;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    padding: 8px 10px;
+    border-radius: 8px;
+    white-space: pre;
+    pointer-events: none;
+  }
+
+  #toast {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 16px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    z-index: 99998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  #toast.visible { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ÚVODNÍ OBRAZOVKA -->
+  <section id="screen-start" class="screen">
+    <div class="logo" id="logo">🧠 ČELOVKA</div>
+
+    <div class="field-row">
+      <label for="select-category">Kategorie</label>
+      <select id="select-category"></select>
+    </div>
+
+    <div class="field-row">
+      <label for="select-length">Délka kola</label>
+      <select id="select-length">
+        <option value="60">60 sekund</option>
+        <option value="90">90 sekund</option>
+        <option value="120" selected>120 sekund</option>
+      </select>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-permission" class="btn btn-secondary">📡 Povolit senzory</button>
+    </div>
+    <div id="sensor-status">Pro hraní náklonem telefonu je potřeba povolit senzory.</div>
+
+    <div class="btn-row">
+      <button id="btn-start" class="btn btn-primary" disabled>▶️ Start</button>
+    </div>
+
+    <div class="hint">Telefon drž na šířku a přilož displejem na čelo. Náklon nahoru = správně, náklon dolů = špatně.</div>
+  </section>
+
+  <!-- ODPOČET -->
+  <section id="screen-countdown" class="screen hidden">
+    <div class="countdown-number" id="countdown-number">3</div>
+    <div class="countdown-label">Přilož si telefon na čelo…</div>
+  </section>
+
+  <!-- HERNÍ OBRAZOVKA -->
+  <section id="screen-game" class="screen hidden">
+    <div class="game-top">
+      <div id="game-timer">120</div>
+      <div id="game-score">Skóre: 0</div>
+    </div>
+    <div id="game-word-wrap">
+      <div id="game-word">slovo</div>
+    </div>
+    <div class="touch-zones hidden" id="touch-zones">
+      <div class="zone wrong">✗ ŠPATNĚ</div>
+      <div class="zone correct">✓ SPRÁVNĚ</div>
+    </div>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section id="screen-feedback" class="screen hidden">
+    <div id="feedback-text">SPRÁVNĚ</div>
+  </section>
+
+  <!-- KONEC KOLA -->
+  <section id="screen-end" class="screen hidden">
+    <div class="logo" style="margin-bottom:0;">Konec kola!</div>
+    <div id="end-score">Skóre: 0 / 0</div>
+    <div id="end-list-wrap">
+      <ul id="end-list"></ul>
+    </div>
+    <div class="btn-row">
+      <button id="btn-replay" class="btn btn-primary">🔁 Hrát znovu</button>
+      <button id="btn-back" class="btn btn-secondary">⬅️ Kategorie</button>
+    </div>
+  </section>
+
+  <div id="orientation-lock">
+    <div class="rotate-icon">📱</div>
+    <p>Otoč telefon na šířku</p>
+  </div>
+
+  <div id="debug-overlay" class="hidden"></div>
+  <div id="toast"></div>
+
+</div>
+
+<script src="words.js"></script>
+<script>
+(() => {
+  "use strict";
+
+  /* =========================================================
+     NASTAVITELNÉ KONSTANTY – NÁKLON A ČASOVÁNÍ
+     Uprav dle reálného testování na telefonu (viz debug režim:
+     dlouze podrž logo ČELOVKA na úvodní obrazovce).
+  ========================================================= */
+  const TILT_CORRECT_THRESHOLD = 35;   // stupně gamma (upravené dle orientace) -> SPRÁVNĚ
+  const TILT_WRONG_THRESHOLD   = -35;  // stupně gamma -> ŠPATNĚ
+  const TILT_NEUTRAL_RANGE     = 15;   // musí se vrátit sem, aby se telefon znovu "odjistil"
+  const ANSWER_COOLDOWN_MS     = 1000; // minimální prodleva mezi dvěma odpověďmi
+  const COUNTDOWN_SECONDS      = 3;
+  const LOW_TIME_THRESHOLD     = 10;   // posledních X sekund = červená + pípání
+  const FEEDBACK_DURATION_MS   = 800;
+  const LONG_PRESS_MS          = 3000; // podržení loga pro debug režim
+
+  /* ========================================================= */
+
+  const $ = (id) => document.getElementById(id);
+
+  const el = {
+    screenStart: $("screen-start"),
+    screenCountdown: $("screen-countdown"),
+    screenGame: $("screen-game"),
+    screenFeedback: $("screen-feedback"),
+    screenEnd: $("screen-end"),
+    orientationLock: $("orientation-lock"),
+    logo: $("logo"),
+    selectCategory: $("select-category"),
+    selectLength: $("select-length"),
+    btnPermission: $("btn-permission"),
+    sensorStatus: $("sensor-status"),
+    btnStart: $("btn-start"),
+    countdownNumber: $("countdown-number"),
+    gameTimer: $("game-timer"),
+    gameScore: $("game-score"),
+    gameWord: $("game-word"),
+    touchZones: $("touch-zones"),
+    feedbackText: $("feedback-text"),
+    endScore: $("end-score"),
+    endList: $("end-list"),
+    btnReplay: $("btn-replay"),
+    btnBack: $("btn-back"),
+    debugOverlay: $("debug-overlay"),
+    toast: $("toast"),
+  };
+
+  /* ---------------- Stav aplikace ---------------- */
+  const state = {
+    category: null,
+    roundLength: 120,
+    words: [],
+    index: 0,
+    score: 0,
+    results: [],       // { word, correct }
+    remaining: 120,
+    timerId: null,
+    controlMode: "sensor", // "sensor" | "touch"
+    sensorPermission: "unknown", // unknown | granted | denied | unavailable
+    currentScreen: "start",
+    wakeLock: null,
+    debugMode: false,
+  };
+
+  /* ---------------- Pomocné funkce ---------------- */
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function showScreen(name) {
+    [el.screenStart, el.screenCountdown, el.screenGame, el.screenEnd].forEach((s) => s.classList.add("hidden"));
+    const map = {
+      start: el.screenStart,
+      countdown: el.screenCountdown,
+      game: el.screenGame,
+      end: el.screenEnd,
+    };
+    if (map[name]) map[name].classList.remove("hidden");
+    state.currentScreen = name;
+  }
+
+  function showToast(msg) {
+    el.toast.textContent = msg;
+    el.toast.classList.add("visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => el.toast.classList.remove("visible"), 1800);
+  }
+
+  /* ---------------- Naplnění kategorií ---------------- */
+  function populateCategories() {
+    const names = Object.keys(WORD_CATEGORIES);
+    el.selectCategory.innerHTML = names
+      .map((n) => `<option value="${n}">${n}</option>`)
+      .join("");
+    state.category = names[0];
+  }
+  el.selectCategory.addEventListener("change", (e) => {
+    state.category = e.target.value;
+  });
+  el.selectLength.addEventListener("change", (e) => {
+    state.roundLength = parseInt(e.target.value, 10);
+  });
+
+  /* =========================================================
+     ZVUK – Web Audio API (bez externích souborů)
+  ========================================================= */
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  function beep(freq = 880, duration = 0.15, type = "sine", volume = 0.25) {
+    const ctx = ensureAudio();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+  }
+
+  /* =========================================================
+     WAKE LOCK
+  ========================================================= */
+  async function requestWakeLock() {
+    try {
+      if ("wakeLock" in navigator) {
+        state.wakeLock = await navigator.wakeLock.request("screen");
+      }
+    } catch (err) {
+      // Not supported / denied — hra funguje dál, jen se displej může vypnout.
+      console.warn("Wake Lock nedostupný:", err);
+    }
+  }
+  function releaseWakeLock() {
+    if (state.wakeLock) {
+      state.wakeLock.release().catch(() => {});
+      state.wakeLock = null;
+    }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && state.currentScreen === "game") {
+      requestWakeLock();
+    }
+  });
+
+  /* =========================================================
+     DETEKCE NÁKLONU
+  ========================================================= */
+  let locked = false;        // true = čeká se na návrat do neutrální polohy
+  let cooldownDone = true;   // true = cooldown uplynul
+  let lastAlpha = null, lastBeta = null, lastGamma = null, lastTilt = null;
+  let sensorDataFlowing = false;
+
+  function getScreenAngle() {
+    if (screen.orientation && typeof screen.orientation.angle === "number") return screen.orientation.angle;
+    if (typeof window.orientation === "number") return window.orientation;
+    return 0;
+  }
+
+  function handleOrientation(e) {
+    if (e.gamma === null || e.beta === null) return;
+    sensorDataFlowing = true;
+    const angle = getScreenAngle();
+    let tilt = e.gamma;
+    // Normalizace: v "landscape-secondary" (úhel -90/270) je gamma obrácená.
+    if (angle === -90 || angle === 270) tilt = -tilt;
+
+    lastAlpha = e.alpha;
+    lastBeta = e.beta;
+    lastGamma = e.gamma;
+    lastTilt = tilt;
+    updateDebugOverlay();
+
+    if (state.currentScreen !== "game" || state.controlMode !== "sensor") return;
+
+    if (locked) {
+      if (cooldownDone && Math.abs(tilt) <= TILT_NEUTRAL_RANGE) {
+        locked = false;
+      }
+      return;
+    }
+
+    if (tilt >= TILT_CORRECT_THRESHOLD) {
+      triggerAnswer(true);
+    } else if (tilt <= TILT_WRONG_THRESHOLD) {
+      triggerAnswer(false);
+    }
+  }
+
+  function updateDebugOverlay() {
+    if (!state.debugMode) return;
+    el.debugOverlay.textContent =
+      `alpha: ${fmt(lastAlpha)}\n` +
+      `beta:  ${fmt(lastBeta)}\n` +
+      `gamma: ${fmt(lastGamma)}\n` +
+      `tilt:  ${fmt(lastTilt)}\n` +
+      `screen.angle: ${getScreenAngle()}\n` +
+      `locked: ${locked}  cooldownDone: ${cooldownDone}\n` +
+      `mode: ${state.controlMode} / ${state.sensorPermission}`;
+  }
+  function fmt(v) { return v === null || v === undefined ? "—" : v.toFixed(1); }
+
+  /* --- Dlouhé podržení loga = přepnutí debug režimu --- */
+  let pressTimer = null;
+  function startPress() {
+    pressTimer = setTimeout(() => {
+      state.debugMode = !state.debugMode;
+      el.debugOverlay.classList.toggle("hidden", !state.debugMode);
+      showToast(state.debugMode ? "Debug režim zapnut" : "Debug režim vypnut");
+      updateDebugOverlay();
+    }, LONG_PRESS_MS);
+  }
+  function cancelPress() { clearTimeout(pressTimer); }
+  el.logo.addEventListener("pointerdown", startPress);
+  el.logo.addEventListener("pointerup", cancelPress);
+  el.logo.addEventListener("pointerleave", cancelPress);
+  el.logo.addEventListener("pointercancel", cancelPress);
+  el.logo.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  /* --- Žádost o povolení senzorů --- */
+  el.btnPermission.addEventListener("click", async () => {
+    ensureAudio(); // odemkne Web Audio v rámci gesta uživatele i pro iOS
+    const DOE = window.DeviceOrientationEvent;
+    if (!DOE) {
+      state.sensorPermission = "unavailable";
+      state.controlMode = "touch";
+      setSensorStatus("Tento prohlížeč senzory nepodporuje. Hraje se dotykem (vlevo = špatně, vpravo = správně).", "warn");
+      el.btnStart.disabled = false;
+      return;
+    }
+    if (typeof DOE.requestPermission === "function") {
+      // iOS 13+
+      try {
+        const result = await DOE.requestPermission();
+        if (result === "granted") {
+          state.sensorPermission = "granted";
+          state.controlMode = "sensor";
+          window.addEventListener("deviceorientation", handleOrientation);
+          setSensorStatus("Senzory povoleny ✓ Ovládej náklonem telefonu.", "ok");
+        } else {
+          state.sensorPermission = "denied";
+          state.controlMode = "touch";
+          setSensorStatus("Senzory zamítnuty. Hraje se dotykem (vlevo = špatně, vpravo = správně).", "warn");
+        }
+      } catch (err) {
+        state.sensorPermission = "denied";
+        state.controlMode = "touch";
+        setSensorStatus("Senzory se nepodařilo povolit. Hraje se dotykem (vlevo = špatně, vpravo = správně).", "err");
+      }
+      el.btnStart.disabled = false;
+    } else {
+      // Android a další — není potřeba explicitní povolení.
+      state.sensorPermission = "granted";
+      state.controlMode = "sensor";
+      window.addEventListener("deviceorientation", handleOrientation);
+      setSensorStatus("Senzory připraveny ✓ Ovládej náklonem telefonu.", "ok");
+      el.btnStart.disabled = false;
+      // Pojistka: pokud do 1.5 s nepřijdou žádná data, přepneme na dotyk.
+      setTimeout(() => {
+        if (!sensorDataFlowing) {
+          state.controlMode = "touch";
+          setSensorStatus("Ze senzorů nepřicházejí data. Hraje se dotykem (vlevo = špatně, vpravo = správně).", "warn");
+        }
+      }, 1500);
+    }
+  });
+
+  function setSensorStatus(msg, cls) {
+    el.sensorStatus.textContent = msg;
+    el.sensorStatus.className = cls || "";
+  }
+
+  /* =========================================================
+     DOTYKOVÉ OVLÁDÁNÍ (fallback)
+  ========================================================= */
+  el.screenGame.addEventListener("click", (e) => {
+    if (state.controlMode !== "touch") return;
+    if (state.currentScreen !== "game") return;
+    if (locked) return;
+    const w = window.innerWidth;
+    const correct = e.clientX > w / 2;
+    triggerAnswer(correct);
+  });
+
+  /* =========================================================
+     HERNÍ LOGIKA
+  ========================================================= */
+  function triggerAnswer(correct) {
+    if (locked) return;
+    locked = true;
+    cooldownDone = false;
+    setTimeout(() => { cooldownDone = true; }, ANSWER_COOLDOWN_MS);
+    recordAnswer(correct);
+  }
+
+  function recordAnswer(correct) {
+    const word = state.words[state.index];
+    state.results.push({ word, correct });
+    if (correct) state.score++;
+    el.gameScore.textContent = `Skóre: ${state.score}`;
+
+    if (navigator.vibrate) {
+      try { navigator.vibrate(correct ? 80 : [60, 40, 60]); } catch (e) {}
+    }
+
+    beep(correct ? 1046 : 220, correct ? 0.18 : 0.3, correct ? "sine" : "sawtooth", 0.3);
+
+    showFeedback(correct);
+  }
+
+  function showFeedback(correct) {
+    el.screenFeedback.classList.remove("hidden");
+    el.screenFeedback.className = "screen " + (correct ? "correct" : "wrong");
+    el.feedbackText.textContent = correct ? "SPRÁVNĚ" : "ŠPATNĚ";
+    setTimeout(() => {
+      el.screenFeedback.classList.add("hidden");
+      nextWordOrEnd();
+    }, FEEDBACK_DURATION_MS);
+  }
+
+  function nextWordOrEnd() {
+    if (state.remaining <= 0) {
+      endRound();
+      return;
+    }
+    state.index++;
+    if (state.index >= state.words.length) {
+      // Došla slova dřív než čas — znovu zamícháme a jedeme dál (bez okamžitého opakování).
+      const last = state.words[state.words.length - 1];
+      let reshuffled = shuffle(WORD_CATEGORIES[state.category]);
+      if (reshuffled[0] === last) {
+        [reshuffled[0], reshuffled[1]] = [reshuffled[1], reshuffled[0]];
+      }
+      state.words = state.words.concat(reshuffled);
+    }
+    showWord();
+  }
+
+  function showWord() {
+    el.gameWord.textContent = state.words[state.index];
+  }
+
+  function startCountdown() {
+    showScreen("countdown");
+    let n = COUNTDOWN_SECONDS;
+    el.countdownNumber.textContent = n;
+    beep(660, 0.12);
+    const iv = setInterval(() => {
+      n--;
+      if (n > 0) {
+        el.countdownNumber.textContent = n;
+        beep(660, 0.12);
+      } else {
+        clearInterval(iv);
+        el.countdownNumber.textContent = "GO!";
+        beep(990, 0.25, "sine", 0.35);
+        setTimeout(startRound, 300);
+      }
+    }, 1000);
+  }
+
+  function startRound() {
+    state.words = shuffle(WORD_CATEGORIES[state.category]);
+    state.index = 0;
+    state.score = 0;
+    state.results = [];
+    state.remaining = state.roundLength;
+    locked = false;
+    cooldownDone = true;
+
+    el.gameScore.textContent = "Skóre: 0";
+    el.gameTimer.textContent = formatTime(state.remaining);
+    el.gameTimer.classList.remove("low-time");
+    el.touchZones.classList.toggle("hidden", state.controlMode !== "touch");
+    showWord();
+    showScreen("game");
+    requestWakeLock();
+
+    clearInterval(state.timerId);
+    state.timerId = setInterval(tick, 1000);
+  }
+
+  function formatTime(sec) {
+    sec = Math.max(sec, 0);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  function tick() {
+    if (isPortrait()) return; // pauza, když je telefon na výšku
+    state.remaining--;
+    el.gameTimer.textContent = formatTime(state.remaining);
+    if (state.remaining <= LOW_TIME_THRESHOLD && state.remaining >= 0) {
+      el.gameTimer.classList.add("low-time");
+      if (state.remaining > 0) beep(440, 0.1, "sine", 0.2);
+    }
+    if (state.remaining <= 0) {
+      clearInterval(state.timerId);
+      beep(180, 0.4, "sawtooth", 0.3);
+      // Necháme doběhnout případný feedback overlay, pak konec.
+      if (el.screenFeedback.classList.contains("hidden")) endRound();
+    }
+  }
+
+  function endRound() {
+    clearInterval(state.timerId);
+    releaseWakeLock();
+    el.endScore.textContent = `Skóre: ${state.score} / ${state.results.length}`;
+    el.endList.innerHTML = state.results
+      .map((r) => `<li class="${r.correct ? "ok" : "bad"}"><span>${escapeHtml(r.word)}</span><span class="mark">${r.correct ? "✓" : "✗"}</span></li>`)
+      .join("");
+    showScreen("end");
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  el.btnStart.addEventListener("click", () => {
+    ensureAudio();
+    startCountdown();
+  });
+  el.btnReplay.addEventListener("click", () => {
+    startCountdown();
+  });
+  el.btnBack.addEventListener("click", () => {
+    showScreen("start");
+  });
+
+  /* =========================================================
+     ORIENTACE OBRAZOVKY (portrét vs. landscape)
+     screen.orientation.lock() na iOS Safari nefunguje, takže
+     místo zamykání jen zobrazíme hlášku a pozastavíme časovač.
+  ========================================================= */
+  const portraitQuery = window.matchMedia("(orientation: portrait)");
+  function isPortrait() {
+    return portraitQuery.matches;
+  }
+  function updateOrientationOverlay() {
+    el.orientationLock.classList.toggle("visible", isPortrait());
+  }
+  portraitQuery.addEventListener
+    ? portraitQuery.addEventListener("change", updateOrientationOverlay)
+    : window.addEventListener("resize", updateOrientationOverlay);
+  window.addEventListener("orientationchange", updateOrientationOverlay);
+  updateOrientationOverlay();
+
+  /* =========================================================
+     ZABRÁNIT GESTŮM (pinch-zoom, dvojklik-zoom, pull-to-refresh)
+  ========================================================= */
+  document.addEventListener("gesturestart", (e) => e.preventDefault());
+  let lastTouchEnd = 0;
+  document.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+
+  /* =========================================================
+     SERVICE WORKER (offline)
+  ========================================================= */
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("sw.js").catch((err) => console.warn("SW registrace selhala:", err));
+    });
+  }
+
+  /* =========================================================
+     INIT
+  ========================================================= */
+  populateCategories();
+})();
+</script>
+</body>
+</html>
