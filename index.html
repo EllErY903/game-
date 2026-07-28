@@ -188,15 +188,21 @@
   .game-top {
     width: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--muted);
   }
-  #game-timer { font-variant-numeric: tabular-nums; }
-  #game-timer.low-time { color: var(--red-bright); animation: pulse 1s infinite; }
   #game-score { color: var(--accent-2); }
+  #game-timer {
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(1.8rem, 7vw, 3.2rem);
+    font-weight: 800;
+    color: var(--muted);
+    margin: 2px 0 4px;
+  }
+  #game-timer.low-time { color: var(--red-bright); animation: pulse 1s infinite; }
   @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.4; }
@@ -355,12 +361,12 @@
   <!-- HERNÍ OBRAZOVKA -->
   <section id="screen-game" class="screen hidden">
     <div class="game-top">
-      <div id="game-timer">120</div>
       <div id="game-score">Skóre: 0</div>
     </div>
     <div id="game-word-wrap">
       <div id="game-word">slovo</div>
     </div>
+    <div id="game-timer">120</div>
     <div class="touch-zones hidden" id="touch-zones">
       <div class="zone wrong">✗ ŠPATNĚ</div>
       <div class="zone correct">✓ SPRÁVNĚ</div>
@@ -405,9 +411,9 @@
      Uprav dle reálného testování na telefonu (viz debug režim:
      dlouze podrž logo ČELOVKA na úvodní obrazovce).
   ========================================================= */
-  const TILT_CORRECT_THRESHOLD = 35;   // stupně gamma (upravené dle orientace) -> SPRÁVNĚ
-  const TILT_WRONG_THRESHOLD   = -35;  // stupně gamma -> ŠPATNĚ
-  const TILT_NEUTRAL_RANGE     = 15;   // musí se vrátit sem, aby se telefon znovu "odjistil"
+  const TILT_CORRECT_THRESHOLD = 20;   // stupně gamma (upravené dle orientace) -> SPRÁVNĚ
+  const TILT_WRONG_THRESHOLD   = -20;  // stupně gamma -> ŠPATNĚ
+  const TILT_NEUTRAL_RANGE     = 8;    // musí se vrátit sem, aby se telefon znovu "odjistil"
   const ANSWER_COOLDOWN_MS     = 1000; // minimální prodleva mezi dvěma odpověďmi
   const COUNTDOWN_SECONDS      = 3;
   const LOW_TIME_THRESHOLD     = 10;   // posledních X sekund = červená + pípání

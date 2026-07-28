@@ -73,5 +73,14 @@ const WORD_CATEGORIES = {
     "Krakonoš", "Ještěd", "Sněžka", "Lipno", "Kolín", "Zlín", "Baťa", "Škodovka", "Plzeňský Prazdroj", "Budvar",
     "Kofola", "hospoda", "vodník", "Rusalka", "Golem", "Babička (Boženy Němcové)", "Mikuláš", "čert a anděl", "pomlázka", "kraslice",
     "vánočka", "kapr na Vánoce", "Tři králové", "Malá Strana", "Hradčany"
+  ],
+  "Hra o trůny": [
+    "Jon Snow", "Daenerys Targaryen", "Tyrion Lannister", "Cersei Lannister", "Jaime Lannister", "Sansa Stark", "Arya Stark", "Bran Stark", "Ned Stark", "Catelyn Stark",
+    "Robb Stark", "Theon Greyjoy", "Joffrey Baratheon", "Robert Baratheon", "Stannis Baratheon", "Melisandra", "Malíček", "Varys", "Samwell Tarly", "Brienne z Tarthu",
+    "Ohař", "Hora", "Bronn", "Davos Seaworth", "Margaery Tyrell", "Olenna Tyrell", "Tywin Lannister", "Ramsay Bolton", "Roose Bolton", "Khal Drogo",
+    "Missandei", "Šedý červ", "Jorah Mormont", "Tormund", "Ygritte", "Hodor", "Podrick Payne", "Ellaria Sand", "Oberyn Martell", "Gendry",
+    "Shae", "Meera Reed", "Jojen Reed", "Beric Dondarrion", "Thoros z Myru", "Yara Greyjoy", "Euron Greyjoy", "Balon Greyjoy", "Viserys Targaryen", "Rhaegar Targaryen",
+    "Šílený král", "Drogon", "Rhaegal", "Viserion", "Nymeria", "Duch", "Šedý vítr", "Léto", "Bran Zlomený", "Noční král",
+    "Qyburn", "Vysoký vrabčák", "Lyanna Stark", "Benjen Stark", "Gilly"
   ]
 };
