@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Čelovka – hádací hra na čelo</title>
 <meta name="description" content="Hádací hra na čelo – nakloň telefon nahoru pro správně, dolů pro špatně.">
-<meta name="theme-color" content="#0b0b12">
+<meta name="theme-color" content="#07070f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Čelovka">
@@ -15,18 +15,19 @@
 <link rel="manifest" href="manifest.json">
 <style>
   :root {
-    --bg: #0b0b12;
-    --bg-alt: #15151f;
-    --card: #1c1c29;
-    --text: #f5f5fa;
-    --muted: #9797ab;
-    --accent: #6c5ce7;
-    --accent-2: #a29bfe;
-    --green: #14a44d;
-    --green-bright: #1fd463;
-    --red: #d92b3d;
-    --red-bright: #ff4d5e;
-    --yellow: #ffb020;
+    --bg: #07070f;
+    --card: #16162a;
+    --text: #ffffff;
+    --muted: #a0a0bd;
+    --accent: #7c5cff;
+    --accent-2: #b8a6ff;
+    --pink: #ff3d81;
+    --cyan: #22e0ff;
+    --green: #00c853;
+    --green-bright: #29ff8a;
+    --red: #e01243;
+    --red-bright: #ff466e;
+    --yellow: #ffc21a;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px);
@@ -36,289 +37,273 @@
   * { box-sizing: border-box; }
 
   html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
+    margin: 0; padding: 0; width: 100%; height: 100%;
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     overscroll-behavior: none;
     touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
+    -webkit-user-select: none; user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
     overflow: hidden;
   }
+  button, select { font-family: inherit; }
 
-  button, select {
-    font-family: inherit;
+  /* ===== ANIMOVANÉ POZADÍ ===== */
+  #bg-gradient {
+    position: fixed; inset: -10%;
+    background: linear-gradient(125deg, #12043a, #2b0a52, #06283d, #3d0a3f, #12043a);
+    background-size: 400% 400%;
+    animation: bgShift 18s ease infinite;
+    z-index: 0;
   }
+  @keyframes bgShift {
+    0%,100% { background-position: 0% 50%; }
+    50%     { background-position: 100% 50%; }
+  }
+  .blob {
+    position: fixed; border-radius: 50%;
+    filter: blur(55px); opacity: 0.42; z-index: 1;
+    will-change: transform;
+    pointer-events: none;
+  }
+  #blob1 { width: 46vh; height: 46vh; background: var(--accent); top: -14vh; left: -10vh; animation: float1 14s ease-in-out infinite; }
+  #blob2 { width: 40vh; height: 40vh; background: var(--pink);   bottom: -16vh; right: -8vh; animation: float2 17s ease-in-out infinite; }
+  #blob3 { width: 32vh; height: 32vh; background: var(--cyan);   top: 40%; left: 55%; animation: float3 21s ease-in-out infinite; opacity: 0.25; }
+  @keyframes float1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(6vh,8vh) scale(1.15)} }
+  @keyframes float2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-8vh,-6vh) scale(1.2)} }
+  @keyframes float3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-10vh,5vh) scale(0.85)} }
 
   #app {
-    position: fixed;
-    inset: 0;
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
-    padding-left: var(--safe-left);
-    padding-right: var(--safe-right);
+    position: fixed; inset: 0; z-index: 2;
+    padding-top: var(--safe-top); padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left); padding-right: var(--safe-right);
+  }
+  #app.shake { animation: shakeAnim 0.45s cubic-bezier(.36,.07,.19,.97); }
+  @keyframes shakeAnim {
+    10%,90%{transform:translateX(-6px)} 20%,80%{transform:translateX(10px)}
+    30%,50%,70%{transform:translateX(-14px)} 40%,60%{transform:translateX(14px)}
   }
 
   .screen {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 20px;
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 20px;
   }
-
   .hidden { display: none !important; }
 
-  /* ---------- Orientation lock ---------- */
+  /* ===== ORIENTACE ===== */
   #orientation-lock {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
+    position: fixed; inset: 0; z-index: 9999;
     background: var(--bg);
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: 16px;
-    padding: 24px;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; gap: 16px; padding: 24px;
   }
   #orientation-lock.visible { display: flex; }
-  #orientation-lock .rotate-icon {
-    font-size: 64px;
-    animation: rotateHint 1.6s ease-in-out infinite;
-  }
-  @keyframes rotateHint {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(90deg); }
-  }
-  #orientation-lock p { font-size: 1.3rem; margin: 0; color: var(--text); }
+  #orientation-lock .rotate-icon { font-size: 64px; animation: rotateHint 1.6s ease-in-out infinite; }
+  @keyframes rotateHint { 0%,100%{transform:rotate(0)} 50%{transform:rotate(90deg)} }
+  #orientation-lock p { font-size: 1.3rem; margin: 0; }
 
-  /* ---------- Start screen ---------- */
-  #screen-start { gap: 10px; overflow-y: auto; touch-action: pan-y; }
+  /* ===== ÚVODNÍ OBRAZOVKA ===== */
+  #screen-start { gap: 9px; overflow-y: auto; touch-action: pan-y; }
   .logo {
-    font-size: clamp(1.6rem, 5vw, 2.4rem);
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    margin: 2px 0 6px;
-    color: var(--accent-2);
+    font-size: clamp(1.7rem, 5.5vw, 2.6rem);
+    font-weight: 900; letter-spacing: 1px; margin: 0 0 4px;
+    background: linear-gradient(90deg, #b8a6ff, #ff3d81, #22e0ff, #b8a6ff);
+    background-size: 300% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: shine 4s linear infinite;
   }
-  .field-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    max-width: 560px;
-  }
-  .field-row label {
-    width: 130px;
-    flex-shrink: 0;
-    font-size: 0.95rem;
-    color: var(--muted);
-  }
+  @keyframes shine { to { background-position: 300% center; } }
+
+  .field-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 560px; }
+  .field-row label { width: 118px; flex-shrink: 0; font-size: 0.9rem; color: var(--muted); font-weight: 600; }
   select {
     flex: 1;
-    background: var(--card);
+    background: rgba(255,255,255,0.08);
     color: var(--text);
-    border: 1px solid #2c2c3d;
-    border-radius: 10px;
-    padding: 10px 12px;
-    font-size: 1rem;
-    appearance: none;
-    -webkit-appearance: none;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 12px; padding: 11px 12px; font-size: 1rem; font-weight: 600;
+    appearance: none; -webkit-appearance: none;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   }
+  select option { background: #16162a; color: #fff; }
+
   .btn {
-    border: none;
-    border-radius: 12px;
-    padding: 12px 20px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    touch-action: manipulation;
-    color: var(--text);
-    background: var(--card);
-    transition: transform 0.1s ease, opacity 0.15s ease;
+    border: none; border-radius: 14px; padding: 13px 20px;
+    font-size: 1rem; font-weight: 800; cursor: pointer;
+    touch-action: manipulation; color: var(--text);
+    background: rgba(255,255,255,0.1);
+    transition: transform 0.12s ease, opacity 0.15s ease, box-shadow 0.2s ease;
   }
-  .btn:active { transform: scale(0.96); }
-  .btn-primary { background: linear-gradient(135deg, var(--accent), #5849c2); }
-  .btn-primary:disabled { opacity: 0.4; }
-  .btn-secondary { background: var(--card); border: 1px solid #33334a; }
+  .btn:active { transform: scale(0.94); }
+  .btn-primary {
+    background: linear-gradient(135deg, #7c5cff, #ff3d81);
+    box-shadow: 0 6px 24px rgba(124,92,255,0.5);
+    animation: breathe 2.6s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%,100% { box-shadow: 0 6px 22px rgba(124,92,255,0.45); }
+    50%     { box-shadow: 0 6px 34px rgba(255,61,129,0.7); }
+  }
+  .btn-primary:disabled { opacity: 0.35; animation: none; box-shadow: none; }
+  .btn-secondary { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); }
   .btn-row { display: flex; gap: 10px; width: 100%; max-width: 560px; }
   .btn-row .btn { flex: 1; }
-  #sensor-status {
-    font-size: 0.85rem;
-    color: var(--muted);
-    max-width: 560px;
-    text-align: center;
-    min-height: 1.2em;
-  }
+
+  #sensor-status { font-size: 0.82rem; color: var(--muted); max-width: 560px; text-align: center; min-height: 1.1em; }
   #sensor-status.ok { color: var(--green-bright); }
   #sensor-status.warn { color: var(--yellow); }
   #sensor-status.err { color: var(--red-bright); }
-  .hint {
-    font-size: 0.75rem;
-    color: var(--muted);
-    text-align: center;
-    max-width: 560px;
-    margin-top: 4px;
-  }
+  .hint { font-size: 0.72rem; color: var(--muted); text-align: center; max-width: 560px; }
 
-  /* ---------- Countdown ---------- */
-  #screen-countdown .countdown-number {
-    font-size: clamp(6rem, 30vw, 14rem);
-    font-weight: 800;
-    color: var(--accent-2);
+  /* ===== ODPOČET ===== */
+  .countdown-number {
+    font-size: clamp(7rem, 34vw, 16rem); font-weight: 900; line-height: 1;
+    background: linear-gradient(180deg, #fff, #b8a6ff);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    filter: drop-shadow(0 0 30px rgba(124,92,255,0.8));
   }
-  #screen-countdown .countdown-label {
-    font-size: 1.1rem;
-    color: var(--muted);
-    margin-top: -10px;
-  }
+  .countdown-number.pop { animation: cdPop 0.6s cubic-bezier(.17,.89,.32,1.28); }
+  @keyframes cdPop { 0%{transform:scale(2.2);opacity:0} 45%{transform:scale(0.9);opacity:1} 100%{transform:scale(1)} }
+  .countdown-label { font-size: 1.05rem; color: var(--muted); margin-top: 4px; font-weight: 600; }
 
-  /* ---------- Game screen ---------- */
-  #screen-game { padding: 8px 16px; }
+  /* ===== HERNÍ OBRAZOVKA ===== */
+  #screen-game { padding: 6px 16px 0; }
   .game-top {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--muted);
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    font-size: 1.05rem; font-weight: 800;
   }
-  #game-score { color: var(--accent-2); }
+  #streak-badge {
+    opacity: 0; transform: scale(0.5);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(.17,.89,.32,1.28);
+    background: linear-gradient(135deg, #ff8a00, #ff3d81);
+    padding: 5px 13px; border-radius: 999px; font-size: 0.95rem;
+    box-shadow: 0 0 20px rgba(255,138,0,0.65);
+  }
+  #streak-badge.visible { opacity: 1; transform: scale(1); }
+  #streak-badge.bump { animation: streakBump 0.4s cubic-bezier(.17,.89,.32,1.28); }
+  @keyframes streakBump { 0%{transform:scale(1)} 40%{transform:scale(1.4) rotate(-5deg)} 100%{transform:scale(1)} }
+
+  #game-score { color: var(--accent-2); margin-left: auto; }
+  #game-score.pop { animation: scorePop 0.4s cubic-bezier(.17,.89,.32,1.28); }
+  @keyframes scorePop { 0%{transform:scale(1)} 40%{transform:scale(1.35); color:#29ff8a} 100%{transform:scale(1)} }
+
+  #game-word-wrap { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; text-align: center; }
+  #game-word {
+    font-size: clamp(2.6rem, 11.5vw, 7rem); font-weight: 900; line-height: 1.02;
+    word-break: break-word; padding: 0 8px; letter-spacing: -1px;
+    text-shadow: 0 0 40px rgba(184,166,255,0.45);
+  }
+  #game-word.enter { animation: wordIn 0.4s cubic-bezier(.17,.89,.32,1.28); }
+  @keyframes wordIn {
+    0%   { transform: scale(0.6) translateY(30px); opacity: 0; filter: blur(8px); }
+    100% { transform: scale(1) translateY(0); opacity: 1; filter: blur(0); }
+  }
+
   #game-timer {
     font-variant-numeric: tabular-nums;
-    font-size: clamp(1.8rem, 7vw, 3.2rem);
-    font-weight: 800;
-    color: var(--muted);
-    margin: 2px 0 4px;
+    font-size: clamp(2rem, 8vw, 3.6rem); font-weight: 900;
+    color: rgba(255,255,255,0.65); margin: 0 0 4px; line-height: 1;
+    letter-spacing: 1px;
   }
-  #game-timer.low-time { color: var(--red-bright); animation: pulse 1s infinite; }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
+  #game-timer.low-time { color: var(--red-bright); text-shadow: 0 0 24px rgba(255,70,110,0.9); animation: timerPulse 1s infinite; }
+  @keyframes timerPulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.16);opacity:0.75} }
+
+  #time-bar-wrap {
+    width: 100%; height: 7px; background: rgba(255,255,255,0.1);
+    border-radius: 99px; overflow: hidden; margin-bottom: 6px;
   }
-  #game-word-wrap {
-    flex: 1;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+  #time-bar {
+    height: 100%; width: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, #22e0ff, #7c5cff);
+    transition: width 1s linear, background 0.5s ease;
   }
-  #game-word {
-    font-size: clamp(2.6rem, 11vw, 6.5rem);
-    font-weight: 800;
-    line-height: 1.05;
-    word-break: break-word;
-    padding: 0 8px;
-  }
-  .touch-zones {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    z-index: 5;
-  }
+  #time-bar.mid { background: linear-gradient(90deg, #ffc21a, #ff8a00); }
+  #time-bar.low { background: linear-gradient(90deg, #ff466e, #e01243); }
+
+  .touch-zones { position: absolute; inset: 0; display: flex; z-index: 5; }
   .touch-zones .zone {
-    flex: 1;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding-bottom: 14px;
-    font-size: 1.4rem;
-    font-weight: 800;
-    opacity: 0.35;
+    flex: 1; display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 60px; font-size: 1.3rem; font-weight: 900; opacity: 0.4;
   }
   .zone.wrong { color: var(--red-bright); }
   .zone.correct { color: var(--green-bright); }
 
-  /* ---------- Feedback overlay ---------- */
-  #screen-feedback {
-    z-index: 50;
-    font-size: clamp(2.5rem, 10vw, 5rem);
-    font-weight: 900;
-    letter-spacing: 1px;
+  /* ===== FEEDBACK ===== */
+  #screen-feedback { z-index: 50; gap: 4px; }
+  #screen-feedback.correct { background: radial-gradient(circle at center, #00e676 0%, #009e46 60%, #00702f 100%); }
+  #screen-feedback.wrong   { background: radial-gradient(circle at center, #ff5470 0%, #d1103c 60%, #8f0a28 100%); }
+  #feedback-emoji { font-size: clamp(3.5rem, 15vw, 7rem); line-height: 1; animation: emojiPop 0.5s cubic-bezier(.17,.89,.32,1.28); }
+  @keyframes emojiPop { 0%{transform:scale(0) rotate(-45deg)} 60%{transform:scale(1.3) rotate(10deg)} 100%{transform:scale(1) rotate(0)} }
+  #feedback-text {
+    font-size: clamp(2rem, 9vw, 4.5rem); font-weight: 900; letter-spacing: 3px;
+    animation: fbTextIn 0.35s ease-out; text-shadow: 0 4px 20px rgba(0,0,0,0.4);
   }
-  #screen-feedback.correct { background: var(--green); }
-  #screen-feedback.wrong { background: var(--red); }
+  @keyframes fbTextIn { 0%{transform:translateY(24px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  #feedback-word { font-size: clamp(1rem, 3.6vw, 1.6rem); font-weight: 700; opacity: 0.9; }
 
-  /* ---------- End screen ---------- */
-  #screen-end { gap: 8px; }
+  /* ===== KONEC ===== */
+  #screen-end { gap: 6px; }
+  #end-headline { font-size: clamp(1.3rem, 4.5vw, 2rem); font-weight: 900; }
   #end-score {
-    font-size: clamp(1.8rem, 6vw, 2.6rem);
-    font-weight: 800;
-    color: var(--accent-2);
+    font-size: clamp(2.2rem, 9vw, 3.6rem); font-weight: 900;
+    background: linear-gradient(90deg, #29ff8a, #22e0ff, #b8a6ff);
+    background-size: 200% auto;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    animation: shine 3s linear infinite;
+    line-height: 1.1;
   }
+  #end-stars { font-size: 1.4rem; letter-spacing: 4px; }
   #end-list-wrap {
-    width: 100%;
-    max-width: 640px;
-    flex: 1;
-    overflow-y: auto;
-    touch-action: pan-y;
-    background: var(--bg-alt);
-    border-radius: 12px;
-    padding: 6px 10px;
-    margin: 8px 0;
+    width: 100%; max-width: 660px; flex: 1; overflow-y: auto; touch-action: pan-y;
+    background: rgba(0,0,0,0.3); border-radius: 14px; padding: 4px 10px; margin: 4px 0;
+    border: 1px solid rgba(255,255,255,0.08);
   }
   #end-list { list-style: none; margin: 0; padding: 0; }
   #end-list li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 7px 4px;
-    border-bottom: 1px solid #26263a;
-    font-size: 0.95rem;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 4px; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.95rem;
+    animation: rowIn 0.3s ease-out backwards;
   }
+  @keyframes rowIn { from{opacity:0; transform:translateX(-14px)} to{opacity:1; transform:translateX(0)} }
   #end-list li:last-child { border-bottom: none; }
-  #end-list .mark { font-weight: 800; }
+  #end-list .mark { font-weight: 900; font-size: 1.05rem; }
   #end-list li.ok .mark { color: var(--green-bright); }
   #end-list li.bad .mark { color: var(--red-bright); }
 
-  /* ---------- Debug overlay ---------- */
-  #debug-overlay {
-    position: fixed;
-    top: calc(var(--safe-top) + 6px);
-    left: calc(var(--safe-left) + 6px);
-    z-index: 99999;
-    background: rgba(0,0,0,0.75);
-    color: #7CFC9A;
-    font-family: "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11px;
-    line-height: 1.5;
-    padding: 8px 10px;
-    border-radius: 8px;
-    white-space: pre;
-    pointer-events: none;
-  }
+  /* ===== FX CANVAS (konfety) ===== */
+  #fx-canvas { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
 
+  /* ===== DEBUG / TOAST ===== */
+  #debug-overlay {
+    position: fixed; top: calc(var(--safe-top) + 6px); left: calc(var(--safe-left) + 6px);
+    z-index: 99999; background: rgba(0,0,0,0.8); color: #7CFC9A;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11px; line-height: 1.5;
+    padding: 8px 10px; border-radius: 8px; white-space: pre; pointer-events: none;
+  }
   #toast {
-    position: fixed;
-    bottom: calc(var(--safe-bottom) + 16px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--card);
-    color: var(--text);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    z-index: 99998;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+    position: fixed; bottom: calc(var(--safe-bottom) + 16px); left: 50%;
+    transform: translateX(-50%); background: rgba(22,22,42,0.95); color: var(--text);
+    padding: 9px 18px; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+    z-index: 99998; opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+    border: 1px solid rgba(255,255,255,0.15);
   }
   #toast.visible { opacity: 1; }
 </style>
 </head>
 <body>
+
+<div id="bg-gradient"></div>
+<div class="blob" id="blob1"></div>
+<div class="blob" id="blob2"></div>
+<div class="blob" id="blob3"></div>
 
 <div id="app">
 
@@ -346,10 +331,10 @@
     <div id="sensor-status">Pro hraní náklonem telefonu je potřeba povolit senzory.</div>
 
     <div class="btn-row">
-      <button id="btn-start" class="btn btn-primary" disabled>▶️ Start</button>
+      <button id="btn-start" class="btn btn-primary" disabled>▶️ START</button>
     </div>
 
-    <div class="hint">Telefon drž na šířku a přilož displejem na čelo. Náklon nahoru = správně, náklon dolů = špatně.</div>
+    <div class="hint">Telefon drž na šířku a přilož displejem na čelo. Náklon nahoru = správně, dolů = špatně.</div>
   </section>
 
   <!-- ODPOČET -->
@@ -361,12 +346,14 @@
   <!-- HERNÍ OBRAZOVKA -->
   <section id="screen-game" class="screen hidden">
     <div class="game-top">
+      <div id="streak-badge">🔥 3</div>
       <div id="game-score">Skóre: 0</div>
     </div>
     <div id="game-word-wrap">
       <div id="game-word">slovo</div>
     </div>
-    <div id="game-timer">120</div>
+    <div id="game-timer">2:00</div>
+    <div id="time-bar-wrap"><div id="time-bar"></div></div>
     <div class="touch-zones hidden" id="touch-zones">
       <div class="zone wrong">✗ ŠPATNĚ</div>
       <div class="zone correct">✓ SPRÁVNĚ</div>
@@ -375,18 +362,19 @@
 
   <!-- FEEDBACK -->
   <section id="screen-feedback" class="screen hidden">
+    <div id="feedback-emoji">🎉</div>
     <div id="feedback-text">SPRÁVNĚ</div>
+    <div id="feedback-word"></div>
   </section>
 
   <!-- KONEC KOLA -->
   <section id="screen-end" class="screen hidden">
-    <div class="logo" style="margin-bottom:0;">Konec kola!</div>
-    <div id="end-score">Skóre: 0 / 0</div>
-    <div id="end-list-wrap">
-      <ul id="end-list"></ul>
-    </div>
+    <div id="end-headline">Konec kola!</div>
+    <div id="end-score">0 / 0</div>
+    <div id="end-stars"></div>
+    <div id="end-list-wrap"><ul id="end-list"></ul></div>
     <div class="btn-row">
-      <button id="btn-replay" class="btn btn-primary">🔁 Hrát znovu</button>
+      <button id="btn-replay" class="btn btn-primary">🔁 HRÁT ZNOVU</button>
       <button id="btn-back" class="btn btn-secondary">⬅️ Kategorie</button>
     </div>
   </section>
@@ -398,8 +386,9 @@
 
   <div id="debug-overlay" class="hidden"></div>
   <div id="toast"></div>
-
 </div>
+
+<canvas id="fx-canvas"></canvas>
 
 <script src="words.js"></script>
 <script>
@@ -408,67 +397,50 @@
 
   /* =========================================================
      NASTAVITELNÉ KONSTANTY – NÁKLON A ČASOVÁNÍ
-     Uprav dle reálného testování na telefonu (viz debug režim:
-     dlouze podrž logo ČELOVKA na úvodní obrazovce).
+     Prahy jsou ve STUPNÍCH NAKLONĚNÍ displeje od svislé roviny.
+     0° = displej svisle (neutrál, telefon na čele)
+     +  = horní hrana se naklání dozadu (displej míří vzhůru)
+     -  = horní hrana se naklání dopředu (displej míří dolů)
+     Debug režim: dlouze podrž logo ČELOVKA na úvodní obrazovce.
   ========================================================= */
-  const TILT_CORRECT_THRESHOLD = 20;   // stupně gamma (upravené dle orientace) -> SPRÁVNĚ
-  const TILT_WRONG_THRESHOLD   = -20;  // stupně gamma -> ŠPATNĚ
-  const TILT_NEUTRAL_RANGE     = 8;    // musí se vrátit sem, aby se telefon znovu "odjistil"
-  const ANSWER_COOLDOWN_MS     = 1000; // minimální prodleva mezi dvěma odpověďmi
+  const TILT_CORRECT_THRESHOLD = 18;   // náklon nahoru -> SPRÁVNĚ
+  const TILT_WRONG_THRESHOLD   = -18;  // náklon dolů -> ŠPATNĚ
+  const TILT_NEUTRAL_RANGE     = 9;    // sem se musí telefon vrátit, aby se "nabil" na další odpověď
+  const TILT_SMOOTHING         = 0.45; // 0–1, vyšší = rychlejší reakce, nižší = klidnější
+  const TILT_HOLD_MS           = 90;   // jak dlouho musí náklon vydržet, než se započítá
+  const INVERT_TILT            = false;// pokud by byly odpovědi obráceně, přepni na true
+  const ANSWER_COOLDOWN_MS     = 900;  // minimální prodleva mezi dvěma odpověďmi
   const COUNTDOWN_SECONDS      = 3;
   const LOW_TIME_THRESHOLD     = 10;   // posledních X sekund = červená + pípání
   const FEEDBACK_DURATION_MS   = 800;
   const LONG_PRESS_MS          = 3000; // podržení loga pro debug režim
-
   /* ========================================================= */
 
   const $ = (id) => document.getElementById(id);
-
   const el = {
-    screenStart: $("screen-start"),
-    screenCountdown: $("screen-countdown"),
-    screenGame: $("screen-game"),
-    screenFeedback: $("screen-feedback"),
-    screenEnd: $("screen-end"),
-    orientationLock: $("orientation-lock"),
-    logo: $("logo"),
-    selectCategory: $("select-category"),
-    selectLength: $("select-length"),
-    btnPermission: $("btn-permission"),
-    sensorStatus: $("sensor-status"),
-    btnStart: $("btn-start"),
+    app: $("app"),
+    screenStart: $("screen-start"), screenCountdown: $("screen-countdown"),
+    screenGame: $("screen-game"), screenFeedback: $("screen-feedback"), screenEnd: $("screen-end"),
+    orientationLock: $("orientation-lock"), logo: $("logo"),
+    selectCategory: $("select-category"), selectLength: $("select-length"),
+    btnPermission: $("btn-permission"), sensorStatus: $("sensor-status"), btnStart: $("btn-start"),
     countdownNumber: $("countdown-number"),
-    gameTimer: $("game-timer"),
-    gameScore: $("game-score"),
-    gameWord: $("game-word"),
-    touchZones: $("touch-zones"),
-    feedbackText: $("feedback-text"),
-    endScore: $("end-score"),
-    endList: $("end-list"),
-    btnReplay: $("btn-replay"),
-    btnBack: $("btn-back"),
-    debugOverlay: $("debug-overlay"),
-    toast: $("toast"),
+    gameTimer: $("game-timer"), gameScore: $("game-score"), gameWord: $("game-word"),
+    streakBadge: $("streak-badge"), timeBar: $("time-bar"), touchZones: $("touch-zones"),
+    feedbackEmoji: $("feedback-emoji"), feedbackText: $("feedback-text"), feedbackWord: $("feedback-word"),
+    endHeadline: $("end-headline"), endScore: $("end-score"), endStars: $("end-stars"), endList: $("end-list"),
+    btnReplay: $("btn-replay"), btnBack: $("btn-back"),
+    debugOverlay: $("debug-overlay"), toast: $("toast"), fxCanvas: $("fx-canvas"),
   };
 
-  /* ---------------- Stav aplikace ---------------- */
   const state = {
-    category: null,
-    roundLength: 120,
-    words: [],
-    index: 0,
-    score: 0,
-    results: [],       // { word, correct }
-    remaining: 120,
-    timerId: null,
-    controlMode: "sensor", // "sensor" | "touch"
-    sensorPermission: "unknown", // unknown | granted | denied | unavailable
-    currentScreen: "start",
-    wakeLock: null,
-    debugMode: false,
+    category: null, roundLength: 120,
+    words: [], index: 0, score: 0, streak: 0, bestStreak: 0,
+    results: [], remaining: 120, timerId: null,
+    controlMode: "sensor", sensorPermission: "unknown",
+    currentScreen: "start", wakeLock: null, debugMode: false,
   };
 
-  /* ---------------- Pomocné funkce ---------------- */
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -480,12 +452,7 @@
 
   function showScreen(name) {
     [el.screenStart, el.screenCountdown, el.screenGame, el.screenEnd].forEach((s) => s.classList.add("hidden"));
-    const map = {
-      start: el.screenStart,
-      countdown: el.screenCountdown,
-      game: el.screenGame,
-      end: el.screenEnd,
-    };
+    const map = { start: el.screenStart, countdown: el.screenCountdown, game: el.screenGame, end: el.screenEnd };
     if (map[name]) map[name].classList.remove("hidden");
     state.currentScreen = name;
   }
@@ -497,23 +464,23 @@
     showToast._t = setTimeout(() => el.toast.classList.remove("visible"), 1800);
   }
 
-  /* ---------------- Naplnění kategorií ---------------- */
+  function replayAnim(node, cls) {
+    node.classList.remove(cls);
+    void node.offsetWidth; // vynutí restart animace
+    node.classList.add(cls);
+  }
+
+  /* ---------------- Kategorie ---------------- */
   function populateCategories() {
     const names = Object.keys(WORD_CATEGORIES);
-    el.selectCategory.innerHTML = names
-      .map((n) => `<option value="${n}">${n}</option>`)
-      .join("");
+    el.selectCategory.innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join("");
     state.category = names[0];
   }
-  el.selectCategory.addEventListener("change", (e) => {
-    state.category = e.target.value;
-  });
-  el.selectLength.addEventListener("change", (e) => {
-    state.roundLength = parseInt(e.target.value, 10);
-  });
+  el.selectCategory.addEventListener("change", (e) => { state.category = e.target.value; });
+  el.selectLength.addEventListener("change", (e) => { state.roundLength = parseInt(e.target.value, 10); });
 
   /* =========================================================
-     ZVUK – Web Audio API (bez externích souborů)
+     ZVUK – Web Audio API
   ========================================================= */
   let audioCtx = null;
   function ensureAudio() {
@@ -524,21 +491,93 @@
     if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
     return audioCtx;
   }
-  function beep(freq = 880, duration = 0.15, type = "sine", volume = 0.25) {
+  function beep(freq = 880, duration = 0.15, type = "sine", volume = 0.25, delay = 0) {
     const ctx = ensureAudio();
     if (!ctx) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.value = volume;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    const now = ctx.currentTime;
-    gain.gain.setValueAtTime(volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-    osc.start(now);
-    osc.stop(now + duration + 0.02);
+    osc.type = type; osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(ctx.destination);
+    const t0 = ctx.currentTime + delay;
+    gain.gain.setValueAtTime(volume, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+    osc.start(t0); osc.stop(t0 + duration + 0.02);
+  }
+  // Vzestupné arpeggio – čím vyšší streak, tím výš
+  function successChime(streak) {
+    const base = 660 + Math.min(streak, 6) * 60;
+    beep(base, 0.12, "triangle", 0.28, 0);
+    beep(base * 1.26, 0.12, "triangle", 0.26, 0.07);
+    beep(base * 1.5, 0.20, "triangle", 0.24, 0.14);
+  }
+  function failSound() {
+    beep(200, 0.18, "sawtooth", 0.25, 0);
+    beep(140, 0.28, "sawtooth", 0.22, 0.1);
+  }
+
+  /* =========================================================
+     KONFETY (canvas)
+  ========================================================= */
+  const fx = el.fxCanvas.getContext("2d");
+  let particles = [];
+  let fxRunning = false;
+  function sizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    el.fxCanvas.width = window.innerWidth * dpr;
+    el.fxCanvas.height = window.innerHeight * dpr;
+    fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  sizeCanvas();
+  window.addEventListener("resize", sizeCanvas);
+
+  const CONFETTI_COLORS = ["#ff3d81", "#7c5cff", "#22e0ff", "#29ff8a", "#ffc21a", "#ffffff"];
+  function burst(x, y, count = 55, spread = 9) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * spread + 2;
+      particles.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 3,
+        size: Math.random() * 8 + 4,
+        color: CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0],
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.35,
+        life: 1,
+      });
+    }
+    if (particles.length > 400) particles = particles.slice(-400);
+    startFx();
+  }
+  function startFx() {
+    if (fxRunning) return;
+    fxRunning = true;
+    requestAnimationFrame(fxLoop);
+  }
+  function fxLoop() {
+    fx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.vy += 0.32;          // gravitace
+      p.vx *= 0.99;
+      p.x += p.vx; p.y += p.vy;
+      p.rot += p.vr;
+      p.life -= 0.011;
+      if (p.life <= 0 || p.y > window.innerHeight + 40) { particles.splice(i, 1); continue; }
+      fx.save();
+      fx.globalAlpha = Math.max(p.life, 0);
+      fx.translate(p.x, p.y);
+      fx.rotate(p.rot);
+      fx.fillStyle = p.color;
+      fx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      fx.restore();
+    }
+    if (particles.length > 0) {
+      requestAnimationFrame(fxLoop);
+    } else {
+      fx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      fxRunning = false;
+    }
   }
 
   /* =========================================================
@@ -546,84 +585,101 @@
   ========================================================= */
   async function requestWakeLock() {
     try {
-      if ("wakeLock" in navigator) {
-        state.wakeLock = await navigator.wakeLock.request("screen");
-      }
-    } catch (err) {
-      // Not supported / denied — hra funguje dál, jen se displej může vypnout.
-      console.warn("Wake Lock nedostupný:", err);
-    }
+      if ("wakeLock" in navigator) state.wakeLock = await navigator.wakeLock.request("screen");
+    } catch (err) { console.warn("Wake Lock nedostupný:", err); }
   }
   function releaseWakeLock() {
-    if (state.wakeLock) {
-      state.wakeLock.release().catch(() => {});
-      state.wakeLock = null;
-    }
+    if (state.wakeLock) { state.wakeLock.release().catch(() => {}); state.wakeLock = null; }
   }
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && state.currentScreen === "game") {
-      requestWakeLock();
-    }
+    if (document.visibilityState === "visible" && state.currentScreen === "game") requestWakeLock();
   });
 
   /* =========================================================
      DETEKCE NÁKLONU
+
+     POZOR – proč nepoužíváme surovou `gamma`:
+     Když telefon držíš svisle na čele, je beta ≈ ±90°, což je
+     tzv. gimbal lock. V té poloze je gamma matematicky
+     degenerovaná a může skákat mezi +85° a -85° při
+     nepatrném pohybu → odpovědi se náhodně prohazovaly.
+
+     Místo toho počítáme ELEVACI NORMÁLY DISPLEJE nad vodorovnou
+     rovinu: je to prvek R[2][2] rotační matice, který vyjde jako
+        elevace = asin( cos(beta) * cos(gamma) )
+     Tahle veličina je nezávislá na alfa (kompasu), je stejná pro
+     obě orientace na šířku a v okolí svislé polohy je stabilní.
   ========================================================= */
-  let locked = false;        // true = čeká se na návrat do neutrální polohy
-  let cooldownDone = true;   // true = cooldown uplynul
-  let lastAlpha = null, lastBeta = null, lastGamma = null, lastTilt = null;
+  let locked = true;          // true = čeká se na návrat do neutrální polohy
+  let cooldownDone = true;
+  let smoothTilt = null;      // vyhlazená hodnota náklonu
+  let pendingDir = 0, pendingSince = 0;
+  let lastRaw = { alpha: null, beta: null, gamma: null, elev: null };
   let sensorDataFlowing = false;
 
-  function getScreenAngle() {
-    if (screen.orientation && typeof screen.orientation.angle === "number") return screen.orientation.angle;
-    if (typeof window.orientation === "number") return window.orientation;
-    return 0;
+  function computeElevation(beta, gamma) {
+    const b = beta * Math.PI / 180;
+    const g = gamma * Math.PI / 180;
+    let v = Math.cos(b) * Math.cos(g);
+    v = Math.max(-1, Math.min(1, v));
+    return Math.asin(v) * 180 / Math.PI;
   }
 
   function handleOrientation(e) {
-    if (e.gamma === null || e.beta === null) return;
+    if (e.beta === null || e.gamma === null) return;
     sensorDataFlowing = true;
-    const angle = getScreenAngle();
-    let tilt = e.gamma;
-    // Normalizace: v "landscape-secondary" (úhel -90/270) je gamma obrácená.
-    if (angle === -90 || angle === 270) tilt = -tilt;
 
-    lastAlpha = e.alpha;
-    lastBeta = e.beta;
-    lastGamma = e.gamma;
-    lastTilt = tilt;
+    let elev = computeElevation(e.beta, e.gamma);
+    if (INVERT_TILT) elev = -elev;
+
+    smoothTilt = smoothTilt === null ? elev : smoothTilt + (elev - smoothTilt) * TILT_SMOOTHING;
+
+    lastRaw = { alpha: e.alpha, beta: e.beta, gamma: e.gamma, elev };
     updateDebugOverlay();
 
     if (state.currentScreen !== "game" || state.controlMode !== "sensor") return;
 
+    // Hystereze: po odpovědi se musí telefon vrátit do neutrálu
     if (locked) {
-      if (cooldownDone && Math.abs(tilt) <= TILT_NEUTRAL_RANGE) {
+      if (cooldownDone && Math.abs(smoothTilt) <= TILT_NEUTRAL_RANGE) {
         locked = false;
+        pendingDir = 0;
       }
       return;
     }
 
-    if (tilt >= TILT_CORRECT_THRESHOLD) {
-      triggerAnswer(true);
-    } else if (tilt <= TILT_WRONG_THRESHOLD) {
-      triggerAnswer(false);
+    // Náklon musí chvíli vydržet (TILT_HOLD_MS) – filtruje náhodné cuknutí
+    const now = performance.now();
+    const dir = smoothTilt >= TILT_CORRECT_THRESHOLD ? 1
+              : smoothTilt <= TILT_WRONG_THRESHOLD ? -1 : 0;
+
+    if (dir === 0) {
+      pendingDir = 0;
+    } else if (dir !== pendingDir) {
+      pendingDir = dir;
+      pendingSince = now;
+    } else if (now - pendingSince >= TILT_HOLD_MS) {
+      pendingDir = 0;
+      triggerAnswer(dir === 1);
     }
   }
 
   function updateDebugOverlay() {
     if (!state.debugMode) return;
+    const st = locked ? (cooldownDone ? "ČEKÁ NA NEUTRÁL" : "COOLDOWN") : "PŘIPRAVENO";
     el.debugOverlay.textContent =
-      `alpha: ${fmt(lastAlpha)}\n` +
-      `beta:  ${fmt(lastBeta)}\n` +
-      `gamma: ${fmt(lastGamma)}\n` +
-      `tilt:  ${fmt(lastTilt)}\n` +
-      `screen.angle: ${getScreenAngle()}\n` +
-      `locked: ${locked}  cooldownDone: ${cooldownDone}\n` +
-      `mode: ${state.controlMode} / ${state.sensorPermission}`;
+      `alpha:     ${fmt(lastRaw.alpha)}\n` +
+      `beta:      ${fmt(lastRaw.beta)}\n` +
+      `gamma:     ${fmt(lastRaw.gamma)}\n` +
+      `elevace:   ${fmt(lastRaw.elev)}\n` +
+      `vyhlazeno: ${fmt(smoothTilt)}\n` +
+      `prahy:     ${TILT_WRONG_THRESHOLD} / ±${TILT_NEUTRAL_RANGE} / ${TILT_CORRECT_THRESHOLD}\n` +
+      `stav:      ${st}\n` +
+      `režim:     ${state.controlMode} / ${state.sensorPermission}`;
   }
   function fmt(v) { return v === null || v === undefined ? "—" : v.toFixed(1); }
 
-  /* --- Dlouhé podržení loga = přepnutí debug režimu --- */
+  /* --- Dlouhé podržení loga = debug režim --- */
   let pressTimer = null;
   function startPress() {
     pressTimer = setTimeout(() => {
@@ -640,45 +696,36 @@
   el.logo.addEventListener("pointercancel", cancelPress);
   el.logo.addEventListener("contextmenu", (e) => e.preventDefault());
 
-  /* --- Žádost o povolení senzorů --- */
+  /* --- Povolení senzorů --- */
   el.btnPermission.addEventListener("click", async () => {
-    ensureAudio(); // odemkne Web Audio v rámci gesta uživatele i pro iOS
+    ensureAudio();
     const DOE = window.DeviceOrientationEvent;
     if (!DOE) {
-      state.sensorPermission = "unavailable";
-      state.controlMode = "touch";
+      state.sensorPermission = "unavailable"; state.controlMode = "touch";
       setSensorStatus("Tento prohlížeč senzory nepodporuje. Hraje se dotykem (vlevo = špatně, vpravo = správně).", "warn");
-      el.btnStart.disabled = false;
-      return;
+      el.btnStart.disabled = false; return;
     }
     if (typeof DOE.requestPermission === "function") {
-      // iOS 13+
       try {
         const result = await DOE.requestPermission();
         if (result === "granted") {
-          state.sensorPermission = "granted";
-          state.controlMode = "sensor";
+          state.sensorPermission = "granted"; state.controlMode = "sensor";
           window.addEventListener("deviceorientation", handleOrientation);
           setSensorStatus("Senzory povoleny ✓ Ovládej náklonem telefonu.", "ok");
         } else {
-          state.sensorPermission = "denied";
-          state.controlMode = "touch";
+          state.sensorPermission = "denied"; state.controlMode = "touch";
           setSensorStatus("Senzory zamítnuty. Hraje se dotykem (vlevo = špatně, vpravo = správně).", "warn");
         }
       } catch (err) {
-        state.sensorPermission = "denied";
-        state.controlMode = "touch";
+        state.sensorPermission = "denied"; state.controlMode = "touch";
         setSensorStatus("Senzory se nepodařilo povolit. Hraje se dotykem (vlevo = špatně, vpravo = správně).", "err");
       }
       el.btnStart.disabled = false;
     } else {
-      // Android a další — není potřeba explicitní povolení.
-      state.sensorPermission = "granted";
-      state.controlMode = "sensor";
+      state.sensorPermission = "granted"; state.controlMode = "sensor";
       window.addEventListener("deviceorientation", handleOrientation);
       setSensorStatus("Senzory připraveny ✓ Ovládej náklonem telefonu.", "ok");
       el.btnStart.disabled = false;
-      // Pojistka: pokud do 1.5 s nepřijdou žádná data, přepneme na dotyk.
       setTimeout(() => {
         if (!sensorDataFlowing) {
           state.controlMode = "touch";
@@ -687,22 +734,12 @@
       }, 1500);
     }
   });
+  function setSensorStatus(msg, cls) { el.sensorStatus.textContent = msg; el.sensorStatus.className = cls || ""; }
 
-  function setSensorStatus(msg, cls) {
-    el.sensorStatus.textContent = msg;
-    el.sensorStatus.className = cls || "";
-  }
-
-  /* =========================================================
-     DOTYKOVÉ OVLÁDÁNÍ (fallback)
-  ========================================================= */
+  /* --- Dotykové ovládání (fallback) --- */
   el.screenGame.addEventListener("click", (e) => {
-    if (state.controlMode !== "touch") return;
-    if (state.currentScreen !== "game") return;
-    if (locked) return;
-    const w = window.innerWidth;
-    const correct = e.clientX > w / 2;
-    triggerAnswer(correct);
+    if (state.controlMode !== "touch" || state.currentScreen !== "game" || locked) return;
+    triggerAnswer(e.clientX > window.innerWidth / 2);
   });
 
   /* =========================================================
@@ -719,22 +756,53 @@
   function recordAnswer(correct) {
     const word = state.words[state.index];
     state.results.push({ word, correct });
-    if (correct) state.score++;
-    el.gameScore.textContent = `Skóre: ${state.score}`;
 
-    if (navigator.vibrate) {
-      try { navigator.vibrate(correct ? 80 : [60, 40, 60]); } catch (e) {}
+    if (correct) {
+      state.score++;
+      state.streak++;
+      state.bestStreak = Math.max(state.bestStreak, state.streak);
+      successChime(state.streak);
+      if (navigator.vibrate) { try { navigator.vibrate(70); } catch (e) {} }
+    } else {
+      state.streak = 0;
+      failSound();
+      if (navigator.vibrate) { try { navigator.vibrate([50, 45, 50]); } catch (e) {} }
+      replayAnim(el.app, "shake");
     }
 
-    beep(correct ? 1046 : 220, correct ? 0.18 : 0.3, correct ? "sine" : "sawtooth", 0.3);
-
-    showFeedback(correct);
+    el.gameScore.textContent = `Skóre: ${state.score}`;
+    if (correct) replayAnim(el.gameScore, "pop");
+    updateStreakBadge();
+    showFeedback(correct, word);
   }
 
-  function showFeedback(correct) {
+  function updateStreakBadge() {
+    if (state.streak >= 2) {
+      el.streakBadge.textContent = `🔥 ${state.streak} v řadě!`;
+      el.streakBadge.classList.add("visible");
+      replayAnim(el.streakBadge, "bump");
+    } else {
+      el.streakBadge.classList.remove("visible");
+    }
+  }
+
+  const PRAISE = ["SPRÁVNĚ", "SUPER!", "PARÁDA!", "BOMBA!", "PECKA!"];
+  function showFeedback(correct, word) {
     el.screenFeedback.classList.remove("hidden");
     el.screenFeedback.className = "screen " + (correct ? "correct" : "wrong");
-    el.feedbackText.textContent = correct ? "SPRÁVNĚ" : "ŠPATNĚ";
+    if (correct) {
+      el.feedbackEmoji.textContent = state.streak >= 3 ? "🔥" : "🎉";
+      el.feedbackText.textContent = state.streak >= 3
+        ? PRAISE[Math.min(state.streak - 3, PRAISE.length - 1)]
+        : "SPRÁVNĚ";
+      burst(window.innerWidth / 2, window.innerHeight * 0.55, 60 + Math.min(state.streak, 5) * 12);
+    } else {
+      el.feedbackEmoji.textContent = "💀";
+      el.feedbackText.textContent = "ŠPATNĚ";
+    }
+    replayAnim(el.feedbackEmoji, "pop");
+    el.feedbackWord.textContent = word;
+
     setTimeout(() => {
       el.screenFeedback.classList.add("hidden");
       nextWordOrEnd();
@@ -742,16 +810,12 @@
   }
 
   function nextWordOrEnd() {
-    if (state.remaining <= 0) {
-      endRound();
-      return;
-    }
+    if (state.remaining <= 0) { endRound(); return; }
     state.index++;
     if (state.index >= state.words.length) {
-      // Došla slova dřív než čas — znovu zamícháme a jedeme dál (bez okamžitého opakování).
       const last = state.words[state.words.length - 1];
       let reshuffled = shuffle(WORD_CATEGORIES[state.category]);
-      if (reshuffled[0] === last) {
+      if (reshuffled[0] === last && reshuffled.length > 1) {
         [reshuffled[0], reshuffled[1]] = [reshuffled[1], reshuffled[0]];
       }
       state.words = state.words.concat(reshuffled);
@@ -761,39 +825,51 @@
 
   function showWord() {
     el.gameWord.textContent = state.words[state.index];
+    replayAnim(el.gameWord, "enter");
   }
 
   function startCountdown() {
     showScreen("countdown");
     let n = COUNTDOWN_SECONDS;
     el.countdownNumber.textContent = n;
-    beep(660, 0.12);
+    replayAnim(el.countdownNumber, "pop");
+    beep(600, 0.12, "triangle", 0.3);
     const iv = setInterval(() => {
       n--;
       if (n > 0) {
         el.countdownNumber.textContent = n;
-        beep(660, 0.12);
+        replayAnim(el.countdownNumber, "pop");
+        beep(600 + (COUNTDOWN_SECONDS - n) * 90, 0.12, "triangle", 0.3);
       } else {
         clearInterval(iv);
-        el.countdownNumber.textContent = "GO!";
-        beep(990, 0.25, "sine", 0.35);
-        setTimeout(startRound, 300);
+        el.countdownNumber.textContent = "TEĎ!";
+        replayAnim(el.countdownNumber, "pop");
+        beep(1050, 0.28, "triangle", 0.35);
+        burst(window.innerWidth / 2, window.innerHeight / 2, 70);
+        setTimeout(startRound, 350);
       }
     }, 1000);
   }
 
   function startRound() {
     state.words = shuffle(WORD_CATEGORIES[state.category]);
-    state.index = 0;
-    state.score = 0;
-    state.results = [];
-    state.remaining = state.roundLength;
-    locked = false;
+    state.index = 0; state.score = 0; state.streak = 0; state.bestStreak = 0;
+    state.results = []; state.remaining = state.roundLength;
+
+    // OPRAVA: kolo startuje ZAMČENÉ. Hra se "nabije" teprve ve chvíli,
+    // kdy telefon poprvé projde neutrální polohou – jinak se hned na
+    // startu započítala odpověď z náhodné polohy telefonu.
+    locked = true;
     cooldownDone = true;
+    smoothTilt = null;
+    pendingDir = 0;
 
     el.gameScore.textContent = "Skóre: 0";
+    el.streakBadge.classList.remove("visible");
     el.gameTimer.textContent = formatTime(state.remaining);
     el.gameTimer.classList.remove("low-time");
+    el.timeBar.style.width = "100%";
+    el.timeBar.className = "";
     el.touchZones.classList.toggle("hidden", state.controlMode !== "touch");
     showWord();
     showScreen("game");
@@ -814,14 +890,18 @@
     if (isPortrait()) return; // pauza, když je telefon na výšku
     state.remaining--;
     el.gameTimer.textContent = formatTime(state.remaining);
+
+    const pct = Math.max(state.remaining / state.roundLength, 0) * 100;
+    el.timeBar.style.width = pct + "%";
+    el.timeBar.className = pct <= 20 ? "low" : pct <= 50 ? "mid" : "";
+
     if (state.remaining <= LOW_TIME_THRESHOLD && state.remaining >= 0) {
       el.gameTimer.classList.add("low-time");
-      if (state.remaining > 0) beep(440, 0.1, "sine", 0.2);
+      if (state.remaining > 0) beep(520, 0.09, "square", 0.16);
     }
     if (state.remaining <= 0) {
       clearInterval(state.timerId);
-      beep(180, 0.4, "sawtooth", 0.3);
-      // Necháme doběhnout případný feedback overlay, pak konec.
+      beep(160, 0.5, "sawtooth", 0.3);
       if (el.screenFeedback.classList.contains("hidden")) endRound();
     }
   }
@@ -829,49 +909,64 @@
   function endRound() {
     clearInterval(state.timerId);
     releaseWakeLock();
-    el.endScore.textContent = `Skóre: ${state.score} / ${state.results.length}`;
+    locked = true;
+
+    const total = state.results.length;
+    const score = state.score;
+    const ratio = total ? score / total : 0;
+
+    if (score >= 10 || ratio >= 0.7) {
+      el.endHeadline.textContent = "🏆 Skvělé kolo!";
+      setTimeout(() => burst(window.innerWidth * 0.25, window.innerHeight * 0.4, 70), 100);
+      setTimeout(() => burst(window.innerWidth * 0.75, window.innerHeight * 0.4, 70), 320);
+    } else {
+      el.endHeadline.textContent = "Konec kola!";
+    }
+
+    const stars = score >= 15 ? 5 : score >= 11 ? 4 : score >= 7 ? 3 : score >= 4 ? 2 : score >= 1 ? 1 : 0;
+    el.endStars.textContent = "⭐".repeat(stars) + "·".repeat(Math.max(5 - stars, 0)) +
+      (state.bestStreak >= 3 ? `   🔥 nejdelší série: ${state.bestStreak}` : "");
+
+    // Animované napočítání skóre
+    let shown = 0;
+    el.endScore.textContent = `0 / ${total}`;
+    clearInterval(endRound._iv);
+    if (score > 0) {
+      const stepMs = Math.max(Math.min(600 / score, 90), 30);
+      endRound._iv = setInterval(() => {
+        shown++;
+        el.endScore.textContent = `${shown} / ${total}`;
+        beep(500 + shown * 35, 0.05, "triangle", 0.13);
+        if (shown >= score) clearInterval(endRound._iv);
+      }, stepMs);
+    }
+
     el.endList.innerHTML = state.results
-      .map((r) => `<li class="${r.correct ? "ok" : "bad"}"><span>${escapeHtml(r.word)}</span><span class="mark">${r.correct ? "✓" : "✗"}</span></li>`)
+      .map((r, i) => `<li class="${r.correct ? "ok" : "bad"}" style="animation-delay:${Math.min(i * 35, 700)}ms"><span>${escapeHtml(r.word)}</span><span class="mark">${r.correct ? "✓" : "✗"}</span></li>`)
       .join("");
     showScreen("end");
   }
 
   function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  el.btnStart.addEventListener("click", () => {
-    ensureAudio();
-    startCountdown();
-  });
-  el.btnReplay.addEventListener("click", () => {
-    startCountdown();
-  });
-  el.btnBack.addEventListener("click", () => {
-    showScreen("start");
-  });
+  el.btnStart.addEventListener("click", () => { ensureAudio(); startCountdown(); });
+  el.btnReplay.addEventListener("click", () => { startCountdown(); });
+  el.btnBack.addEventListener("click", () => { showScreen("start"); });
 
   /* =========================================================
-     ORIENTACE OBRAZOVKY (portrét vs. landscape)
-     screen.orientation.lock() na iOS Safari nefunguje, takže
-     místo zamykání jen zobrazíme hlášku a pozastavíme časovač.
+     ORIENTACE (screen.orientation.lock() na iOS Safari nefunguje)
   ========================================================= */
   const portraitQuery = window.matchMedia("(orientation: portrait)");
-  function isPortrait() {
-    return portraitQuery.matches;
-  }
-  function updateOrientationOverlay() {
-    el.orientationLock.classList.toggle("visible", isPortrait());
-  }
-  portraitQuery.addEventListener
-    ? portraitQuery.addEventListener("change", updateOrientationOverlay)
-    : window.addEventListener("resize", updateOrientationOverlay);
+  function isPortrait() { return portraitQuery.matches; }
+  function updateOrientationOverlay() { el.orientationLock.classList.toggle("visible", isPortrait()); }
+  if (portraitQuery.addEventListener) portraitQuery.addEventListener("change", updateOrientationOverlay);
+  else window.addEventListener("resize", updateOrientationOverlay);
   window.addEventListener("orientationchange", updateOrientationOverlay);
   updateOrientationOverlay();
 
-  /* =========================================================
-     ZABRÁNIT GESTŮM (pinch-zoom, dvojklik-zoom, pull-to-refresh)
-  ========================================================= */
+  /* ===== Zablokovat gesta ===== */
   document.addEventListener("gesturestart", (e) => e.preventDefault());
   let lastTouchEnd = 0;
   document.addEventListener("touchend", (e) => {
@@ -879,22 +974,15 @@
     if (now - lastTouchEnd <= 300) e.preventDefault();
     lastTouchEnd = now;
   }, { passive: false });
-  document.addEventListener("touchmove", (e) => {
-    if (e.touches.length > 1) e.preventDefault();
-  }, { passive: false });
+  document.addEventListener("touchmove", (e) => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
-  /* =========================================================
-     SERVICE WORKER (offline)
-  ========================================================= */
+  /* ===== Service worker ===== */
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("sw.js").catch((err) => console.warn("SW registrace selhala:", err));
     });
   }
 
-  /* =========================================================
-     INIT
-  ========================================================= */
   populateCategories();
 })();
 </script>
