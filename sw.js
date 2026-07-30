@@ -1,7 +1,7 @@
 // sw.js — jednoduchý offline service worker pro Čelovku
 // POZOR: při každé změně index.html / words.js zvyš číslo verze,
 // jinak telefony budou dál servírovat starou verzi z cache.
-const CACHE_NAME = "celovka-cache-v3";
+const CACHE_NAME = "celovka-cache-v4";
 const CORE_ASSETS = [
   "./",
   "./index.html",

@@ -120,18 +120,84 @@
   }
   @keyframes shine { to { background-position: 300% center; } }
 
-  .field-row { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 560px; }
-  .field-row label { width: 118px; flex-shrink: 0; font-size: 0.9rem; color: var(--muted); font-weight: 600; }
-  select {
-    flex: 1;
-    background: rgba(255,255,255,0.08);
-    color: var(--text);
+  /* --- Tlačítka menu (Výběr tématu / Délka kola) --- */
+  .menu-btn {
+    display: flex; align-items: center; gap: 13px;
+    width: 100%; max-width: 560px;
+    padding: 11px 15px; border-radius: 17px;
+    background: rgba(255,255,255,0.09);
     border: 1px solid rgba(255,255,255,0.16);
-    border-radius: 12px; padding: 11px 12px; font-size: 1rem; font-weight: 600;
-    appearance: none; -webkit-appearance: none;
+    color: var(--text); cursor: pointer;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease;
+    touch-action: manipulation;
   }
-  select option { background: #16162a; color: #fff; }
+  .menu-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.14); }
+  .mb-icon { width: 27px; height: 27px; flex-shrink: 0; color: var(--accent-2); display: block; }
+  .mb-icon svg { width: 100%; height: 100%; display: block; }
+  .mb-text { flex: 1; text-align: left; min-width: 0; }
+  .mb-label {
+    display: block; font-size: 0.66rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.9px; line-height: 1.3;
+  }
+  .mb-value {
+    display: block; font-size: 1.02rem; font-weight: 800; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .mb-chev { color: var(--muted); font-size: 1.5rem; font-weight: 700; line-height: 1; flex-shrink: 0; }
+
+  /* --- Rozbalovací výběr s dlaždicemi --- */
+  #picker {
+    position: absolute; inset: 0; z-index: 80;
+    background: rgba(7,7,15,0.92);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    display: flex; flex-direction: column;
+    padding: 10px 16px 4px;
+  }
+  #picker.opening { animation: pickerIn 0.25s ease-out; }
+  @keyframes pickerIn { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: scale(1); } }
+  .picker-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 9px; flex-shrink: 0;
+  }
+  #picker-title { font-size: 1.15rem; font-weight: 900; letter-spacing: 0.3px; }
+  .picker-close {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18);
+    color: var(--text); font-size: 1rem; font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: manipulation; transition: transform 0.12s ease;
+  }
+  .picker-close:active { transform: scale(0.9); }
+  .picker-grid {
+    flex: 1; overflow-y: auto; touch-action: pan-y;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 10px; align-content: start; padding-bottom: 12px;
+  }
+  .tile {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 5px; padding: 13px 7px; border-radius: 19px;
+    background: rgba(255,255,255,0.075);
+    border: 2px solid transparent; color: var(--text);
+    cursor: pointer; touch-action: manipulation;
+    animation: tileIn 0.32s cubic-bezier(.17,.89,.32,1.28) backwards;
+    transition: transform 0.12s ease, background 0.2s ease;
+  }
+  .tile:active { transform: scale(0.93); }
+  .tile svg { width: 30px; height: 30px; color: var(--accent-2); display: block; }
+  .tile-label { font-size: 0.81rem; font-weight: 800; text-align: center; line-height: 1.18; }
+  .tile-sub { font-size: 0.65rem; font-weight: 600; color: var(--muted); }
+  .tile.selected {
+    background: linear-gradient(135deg, rgba(124,92,255,0.55), rgba(255,61,129,0.45));
+    border-color: var(--accent-2);
+    box-shadow: 0 0 24px rgba(124,92,255,0.55);
+  }
+  .tile.selected svg { color: #fff; }
+  .tile.selected .tile-sub { color: rgba(255,255,255,0.85); }
+  @keyframes tileIn {
+    from { opacity: 0; transform: scale(0.78) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
 
   .btn {
     border: none; border-radius: 14px; padding: 13px 20px;
@@ -311,19 +377,23 @@
   <section id="screen-start" class="screen">
     <div class="logo" id="logo">🧠 ČELOVKA</div>
 
-    <div class="field-row">
-      <label for="select-category">Kategorie</label>
-      <select id="select-category"></select>
-    </div>
+    <button class="menu-btn" id="btn-topic">
+      <span class="mb-icon" id="topic-icon"></span>
+      <span class="mb-text">
+        <span class="mb-label">Výběr tématu</span>
+        <span class="mb-value" id="topic-value">—</span>
+      </span>
+      <span class="mb-chev">›</span>
+    </button>
 
-    <div class="field-row">
-      <label for="select-length">Délka kola</label>
-      <select id="select-length">
-        <option value="60">60 sekund</option>
-        <option value="90">90 sekund</option>
-        <option value="120" selected>120 sekund</option>
-      </select>
-    </div>
+    <button class="menu-btn" id="btn-length">
+      <span class="mb-icon" id="length-icon"></span>
+      <span class="mb-text">
+        <span class="mb-label">Délka kola</span>
+        <span class="mb-value" id="length-value">120 sekund</span>
+      </span>
+      <span class="mb-chev">›</span>
+    </button>
 
     <div class="btn-row">
       <button id="btn-permission" class="btn btn-secondary">📡 Povolit senzory</button>
@@ -379,6 +449,15 @@
     </div>
   </section>
 
+  <!-- ROZBALOVACÍ VÝBĚR (dlaždice) -->
+  <section id="picker" class="hidden">
+    <div class="picker-head">
+      <div id="picker-title">Výběr tématu</div>
+      <button class="picker-close" id="picker-close" aria-label="Zavřít">✕</button>
+    </div>
+    <div class="picker-grid" id="picker-grid"></div>
+  </section>
+
   <div id="orientation-lock">
     <div class="rotate-icon">📱</div>
     <p>Otoč telefon na šířku</p>
@@ -408,12 +487,16 @@
   const TILT_NEUTRAL_RANGE     = 9;    // sem se musí telefon vrátit, aby se "nabil" na další odpověď
   const TILT_SMOOTHING         = 0.45; // 0–1, vyšší = rychlejší reakce, nižší = klidnější
   const TILT_HOLD_MS           = 90;   // jak dlouho musí náklon vydržet, než se započítá
-  const INVERT_TILT            = false;// pokud by byly odpovědi obráceně, přepni na true
+  const INVERT_TILT            = true; // otočí význam náklonu (nahoru/dolů)
   const ANSWER_COOLDOWN_MS     = 900;  // minimální prodleva mezi dvěma odpověďmi
   const COUNTDOWN_SECONDS      = 3;
   const LOW_TIME_THRESHOLD     = 10;   // posledních X sekund = červená + pípání
   const FEEDBACK_DURATION_MS   = 800;
   const LONG_PRESS_MS          = 3000; // podržení loga pro debug režim
+
+  // Vibrace – správně je krátká, špatně delší trojitá (ať je poznat rozdíl poslepu)
+  const VIBRATE_CORRECT        = 55;
+  const VIBRATE_WRONG          = [130, 70, 130];
   /* ========================================================= */
 
   const $ = (id) => document.getElementById(id);
@@ -422,7 +505,9 @@
     screenStart: $("screen-start"), screenCountdown: $("screen-countdown"),
     screenGame: $("screen-game"), screenFeedback: $("screen-feedback"), screenEnd: $("screen-end"),
     orientationLock: $("orientation-lock"), logo: $("logo"),
-    selectCategory: $("select-category"), selectLength: $("select-length"),
+    btnTopic: $("btn-topic"), topicIcon: $("topic-icon"), topicValue: $("topic-value"),
+    btnLength: $("btn-length"), lengthIcon: $("length-icon"), lengthValue: $("length-value"),
+    picker: $("picker"), pickerTitle: $("picker-title"), pickerGrid: $("picker-grid"), pickerClose: $("picker-close"),
     btnPermission: $("btn-permission"), sensorStatus: $("sensor-status"), btnStart: $("btn-start"),
     countdownNumber: $("countdown-number"),
     gameTimer: $("game-timer"), gameScore: $("game-score"), gameWord: $("game-word"),
@@ -470,14 +555,124 @@
     node.classList.add(cls);
   }
 
-  /* ---------------- Kategorie ---------------- */
-  function populateCategories() {
-    const names = Object.keys(WORD_CATEGORIES);
-    el.selectCategory.innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join("");
-    state.category = names[0];
+  /* =========================================================
+     VIBRACE
+     Pozn.: podpora Vibration API na iOS Safari je nejistá a liší
+     se podle verze iOS – proto vždy s feature detekcí a v try/catch.
+     Stav podpory je vidět v debug overlay.
+  ========================================================= */
+  const VIBRATION_SUPPORTED = typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+  function vibrate(pattern) {
+    if (!VIBRATION_SUPPORTED) return false;
+    try { return navigator.vibrate(pattern); } catch (e) { return false; }
   }
-  el.selectCategory.addEventListener("change", (e) => { state.category = e.target.value; });
-  el.selectLength.addEventListener("change", (e) => { state.roundLength = parseInt(e.target.value, 10); });
+
+  /* =========================================================
+     MINIMALISTICKÉ IKONY (inline SVG, bez externích souborů)
+  ========================================================= */
+  const svg = (inner) =>
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+
+  const ICONS = {
+    // pes
+    "Zvířata": svg('<path d="M4.5 5.5v5.5a7.5 7.5 0 0 0 15 0V5.5l-3.6 2.3a9.5 9.5 0 0 0-7.8 0z"/><circle cx="9.6" cy="11.4" r=".95" fill="currentColor" stroke="none"/><circle cx="14.4" cy="11.4" r=".95" fill="currentColor" stroke="none"/><path d="M12 14.1v1.7"/><path d="M10.1 17.4a2.7 2.7 0 0 0 3.8 0"/>'),
+    // filmová klapka
+    "Filmy a seriály": svg('<path d="M3 9h18v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z"/><path d="M3 9l2-4.5h14L21 9"/><path d="M8.6 4.5L6.6 9M13.6 4.5L11.6 9M18.6 4.5L16.6 9"/>'),
+    // hvězda
+    "Slavné osobnosti": svg('<path d="M12 3.5l2.7 5.5 6 .9-4.35 4.2 1.03 6L12 17.27 6.62 20.1l1.03-6L3.3 9.9l6-.9z"/>'),
+    // kufřík
+    "Povolání": svg('<rect x="3" y="7.5" width="18" height="12.5" rx="2.5"/><path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5"/><path d="M3 13.5h18"/>'),
+    // vidlička a lžíce
+    "Jídlo a pití": svg('<path d="M5 3v5.5a2.5 2.5 0 0 0 5 0V3"/><path d="M7.5 11V21"/><ellipse cx="17.3" cy="6.8" rx="2.7" ry="3.8"/><path d="M17.3 10.6V21"/>'),
+    // míč
+    "Sport": svg('<circle cx="12" cy="12" r="9"/><path d="M12 7.2l3.7 2.7-1.4 4.4H9.7L8.3 9.9z"/><path d="M12 3.1v4.1M3.4 10.2l4.9-.3M20.6 10.2l-4.9-.3M6.9 19.6l2.8-5.3M17.1 19.6l-2.8-5.3"/>'),
+    // domeček
+    "Věci v domácnosti": svg('<path d="M3 10.4L12 3.2l9 7.2"/><path d="M5.2 9.2V19a2 2 0 0 0 2 2h9.6a2 2 0 0 0 2-2V9.2"/><path d="M9.6 21v-6.2h4.8V21"/>'),
+    // půllitr
+    "Česká specialita": svg('<path d="M6.5 8.5h9.5V19a2 2 0 0 1-2 2H8.5a2 2 0 0 1-2-2V8.5z"/><path d="M16 10.6h2.3A1.7 1.7 0 0 1 20 12.3v2.5a1.7 1.7 0 0 1-1.7 1.7H16"/><path d="M6.5 8.5c-.2-1.7.9-2.9 2.3-2.7.3-1.7 3.9-2 4.6-.4 1.5-.2 2.8.9 2.6 3.1"/><path d="M9.8 12.2v4.9M12.9 12.2v4.9"/>'),
+    // koruna
+    "Hra o trůny": svg('<path d="M3.2 7.4l3.9 4.2L12 4.2l4.9 7.4 3.9-4.2v9.9a1.5 1.5 0 0 1-1.5 1.5H4.7a1.5 1.5 0 0 1-1.5-1.5V7.4z"/><path d="M3.2 15.7h17.6"/>'),
+  };
+  const ICON_DEFAULT = svg('<path d="M12 3.4l2.1 5.6 5.6 2.1-5.6 2.1L12 18.8l-2.1-5.6-5.6-2.1 5.6-2.1z"/>');
+  const ICON_CLOCK = svg('<circle cx="12" cy="12" r="8.6"/><path d="M12 6.8v5.4l3.4 2"/>');
+  const iconFor = (cat) => ICONS[cat] || ICON_DEFAULT;
+
+  const LENGTH_OPTIONS = [
+    { value: 60,  title: "60 sekund",  sub: "Rychlovka" },
+    { value: 90,  title: "90 sekund",  sub: "Standard" },
+    { value: 120, title: "120 sekund", sub: "Dlouhé kolo" },
+  ];
+
+  /* =========================================================
+     MENU – rozbalovací dlaždice
+  ========================================================= */
+  let pickerMode = null; // "category" | "length"
+
+  function refreshMenuButtons() {
+    el.topicIcon.innerHTML = iconFor(state.category);
+    el.topicValue.textContent = state.category;
+    const opt = LENGTH_OPTIONS.find((o) => o.value === state.roundLength);
+    el.lengthValue.textContent = opt ? opt.title : state.roundLength + " sekund";
+  }
+
+  function openPicker(mode) {
+    pickerMode = mode;
+    ensureAudio();
+    beep(760, 0.07, "triangle", 0.16);
+    el.pickerTitle.textContent = mode === "category" ? "Výběr tématu" : "Délka kola";
+
+    let html = "";
+    if (mode === "category") {
+      Object.keys(WORD_CATEGORIES).forEach((name, i) => {
+        const count = WORD_CATEGORIES[name].length;
+        html += `<button class="tile${name === state.category ? " selected" : ""}" data-value="${escapeHtml(name)}" style="animation-delay:${i * 35}ms">
+          ${iconFor(name)}
+          <span class="tile-label">${escapeHtml(name)}</span>
+          <span class="tile-sub">${count} slov</span>
+        </button>`;
+      });
+    } else {
+      LENGTH_OPTIONS.forEach((o, i) => {
+        html += `<button class="tile${o.value === state.roundLength ? " selected" : ""}" data-value="${o.value}" style="animation-delay:${i * 35}ms">
+          ${ICON_CLOCK}
+          <span class="tile-label">${o.title}</span>
+          <span class="tile-sub">${o.sub}</span>
+        </button>`;
+      });
+    }
+    el.pickerGrid.innerHTML = html;
+    el.picker.classList.remove("hidden");
+    replayAnim(el.picker, "opening");
+  }
+
+  function closePicker() {
+    el.picker.classList.add("hidden");
+    pickerMode = null;
+  }
+
+  el.pickerGrid.addEventListener("click", (e) => {
+    const tile = e.target.closest(".tile");
+    if (!tile) return;
+    if (pickerMode === "category") {
+      state.category = tile.dataset.value;
+    } else {
+      state.roundLength = parseInt(tile.dataset.value, 10);
+      state.remaining = state.roundLength;
+    }
+    beep(940, 0.09, "triangle", 0.2);
+    vibrate(25);
+    refreshMenuButtons();
+    closePicker();
+  });
+
+  el.btnTopic.addEventListener("click", () => openPicker("category"));
+  el.btnLength.addEventListener("click", () => openPicker("length"));
+  el.pickerClose.addEventListener("click", () => { beep(420, 0.07, "triangle", 0.14); closePicker(); });
+
+  function initMenu() {
+    state.category = Object.keys(WORD_CATEGORIES)[0];
+    refreshMenuButtons();
+  }
 
   /* =========================================================
      ZVUK – Web Audio API
@@ -675,7 +870,9 @@
       `vyhlazeno: ${fmt(smoothTilt)}\n` +
       `prahy:     ${TILT_WRONG_THRESHOLD} / ±${TILT_NEUTRAL_RANGE} / ${TILT_CORRECT_THRESHOLD}\n` +
       `stav:      ${st}\n` +
-      `režim:     ${state.controlMode} / ${state.sensorPermission}`;
+      `invertace: ${INVERT_TILT}\n` +
+      `režim:     ${state.controlMode} / ${state.sensorPermission}\n` +
+      `vibrace:   ${VIBRATION_SUPPORTED ? "podporováno" : "NEPODPOROVÁNO"}`;
   }
   function fmt(v) { return v === null || v === undefined ? "—" : v.toFixed(1); }
 
@@ -762,11 +959,11 @@
       state.streak++;
       state.bestStreak = Math.max(state.bestStreak, state.streak);
       successChime(state.streak);
-      if (navigator.vibrate) { try { navigator.vibrate(70); } catch (e) {} }
+      vibrate(VIBRATE_CORRECT);
     } else {
       state.streak = 0;
       failSound();
-      if (navigator.vibrate) { try { navigator.vibrate([50, 45, 50]); } catch (e) {} }
+      vibrate(VIBRATE_WRONG);
       replayAnim(el.app, "shake");
     }
 
@@ -983,7 +1180,8 @@
     });
   }
 
-  populateCategories();
+  el.lengthIcon.innerHTML = ICON_CLOCK;
+  initMenu();
 })();
 </script>
 </body>
